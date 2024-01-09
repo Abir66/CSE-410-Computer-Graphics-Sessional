@@ -1,22 +1,16 @@
-#ifndef VECTOR3D
-#define VECTOR3D
-
-#ifdef __unix__
-#include <GL/glut.h>
-#elif defined(_WIN32) || defined(WIN32)
-#include <windows.h>
-#include <glut.h>
-#endif
+#ifndef VECTOR3D_H
+#define VECTOR3D_H
 
 #include <iostream>
-#include <math.h>
+#include <fstream>
+#include <iomanip>
+#include <cmath>
 
 struct Vector3D
 {
-    double x, y, z;
-    Vector3D() {}
-    Vector3D(double x, double y, double z) : x(x), y(y), z(z) {}
-    Vector3D(const Vector3D &p) : x(p.x), y(p.y), z(p.z) {}
+    double x,y,z,w;
+    Vector3D(double x = 0, double y = 0, double z = 0, double w = 1) : x(x), y(y), z(z), w(w) {}
+    Vector3D(const Vector3D &p) : x(p.x), y(p.y), z(p.z), w(p.w) {}
 
     Vector3D operator+(Vector3D vec) { return Vector3D(x + vec.x, y + vec.y, z + vec.z); }
     Vector3D operator-(Vector3D vec) { return Vector3D(x - vec.x, y - vec.y, z - vec.z); }
@@ -27,12 +21,6 @@ struct Vector3D
     friend Vector3D operator/(double a, Vector3D vec) { return Vector3D(a / vec.x, a / vec.y, a / vec.z); }
 
     static double dot(Vector3D a, Vector3D b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
-
-    // void rotate(Vector3D &axis, double angle)
-    // {
-    //     // Vector3D perpendicular = axis * (*this);
-    //     // *this = (*this) * cos(angle) + perpendicular * sin(angle);
-    // }
 
     void rotate(Vector3D axis, double angle){
         axis.normalize();
@@ -49,24 +37,37 @@ struct Vector3D
         z /= length;
     }
 
+    void reset_w()
+    {
+        x /= w;
+        y /= w;
+        z /= w;
+        w = 1;
+    }
+
     double value()
     {
         return sqrt(x * x + y * y + z * z);
     }
 
-    void print()
+    
+    friend std::ostream& operator<<(std::ostream& os, Vector3D& vec)
     {
-        std::cout << x << " " << y << " " << z << " " << value() << std::endl;
+        // set precision to 7 decimal places
+        os << std::fixed << std::setprecision(7);   
+        os << vec.x << " " << vec.y << " " << vec.z << std::endl;
+        return os;
     }
 
-    static Vector3D reflect2D(Vector3D v, Vector3D normal)
+    friend std::istream& operator>>(std::istream& is, Vector3D& vec)
     {
-        v.z = 0;
-        normal.z = 0;
-        Vector3D reflected = v - normal * 2 * Vector3D::dot(normal, v);
-        reflected.normalize();
-        return reflected;
+        is >> vec.x >> vec.y >> vec.z;
+        vec.w = 1;
+        return is;
     }
+
 };
 
-#endif
+
+
+#endif 
