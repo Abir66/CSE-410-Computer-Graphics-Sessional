@@ -18,4 +18,5 @@ for test_case in "${folders[@]}"; do
             echo "    fail in $i"
         fi
     done
+    read -p " continue? " yn
 done
