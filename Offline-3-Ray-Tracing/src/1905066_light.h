@@ -54,7 +54,7 @@ struct SpotLight{
         glPushMatrix();{
             glTranslatef(point_light.light_pos.x, point_light.light_pos.y, point_light.light_pos.z);
             glLineWidth(2);
-            glColor3f(1 - point_light.color.r, 1 - point_light.color.g, 1 - point_light.color.b);
+            // glColor3f(1 - point_light.color.r, 1 - point_light.color.g, 1 - point_light.color.b);
             glScaled(100,100,100);    
             glBegin(GL_LINES);
             glVertex3f(0, 0, 0);

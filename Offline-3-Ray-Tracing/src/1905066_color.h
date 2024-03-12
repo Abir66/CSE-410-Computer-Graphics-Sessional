@@ -32,13 +32,20 @@ struct Color{
 
     void normalize()
     {
-        if(r > 1) r = 1;
-        if(g > 1) g = 1;
-        if(b > 1) b = 1;
+       
+        if(r > 1.0 || g > 1.0 || b > 1.0)
+        {
+            double max = std::max(std::max(r,g),b);
 
-        if(r < 0) r = 0;
-        if(g < 0) g = 0;
-        if(b < 0) b = 0;
+            r /= max;
+            g /= max;
+            b /= max;
+        }
+
+        if(r < 0.0) r = 0;
+        if(g < 0.0) g = 0;
+        if(b < 0.0) b = 0;
+
     }   
 
     // * operator overloading
@@ -54,6 +61,9 @@ struct Color{
         return Color(r * color.r, g * color.g, b * color.b);
     }
 
+    Color operator-(Color color){
+        return Color(r - color.r, g - color.g, b - color.b);
+    }
 
     friend Color operator*(double a, Color color){
         return Color(color.r * a, color.g * a, color.b * a);

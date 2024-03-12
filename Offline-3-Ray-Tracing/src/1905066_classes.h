@@ -37,7 +37,9 @@ struct Object
     Color color;
     std::vector<double> coEfficients{0.0, 0.0, 0.0, 0.0};
     int shine;
-    
+
+    double refraction_index = 1.0;
+    double refrection_coefficient = 0.0;    
 
     Object(){}
     
@@ -70,17 +72,22 @@ struct Object
         Vector3D intersection_point = ray.start + ray.dir * t_min;
         Color insection_point_color = getColor(intersection_point);
         color = insection_point_color * coEfficients[COEFF_AMBIENT];
-        
+
         Vector3D normal = getNormalAt(intersection_point);
 
 
-        if(Vector3D::dot(normal, ray.dir) > 0) normal = -normal;
-
+        bool isInside = false;
+        if(Vector3D::dot(normal, ray.dir) > 0) {
+            normal = -normal;
+            isInside = true;
+        }
 
 
         for(auto light : pointLights){
-            
+
             Vector3D light_direction = (intersection_point - light->light_pos).normal();
+            
+            if(Vector3D::dot(light_direction, normal) > 0) continue;
             
             Ray ray2(light->light_pos + light_direction * EPSILON, light_direction);
 
@@ -112,8 +119,10 @@ struct Object
         for(auto spotLight : spotLights){
             auto light = spotLight->point_light;
             Vector3D light_direction = (intersection_point - light.light_pos).normal();
+
+            if(Vector3D::dot(light_direction, normal) > 0) continue;
             
-            double dot_product = Vector3D::dot(light_direction, spotLight->light_direction.normal());
+            double dot_product = Vector3D::dot(light_direction, (spotLight->light_direction).normal());
             double angle = acos(dot_product) * 180 / PI;
 
             if(abs(angle) > spotLight->cut_off_angle) continue;
@@ -134,13 +143,12 @@ struct Object
             }
 
             if(!isBlocked){
-                double spot_light_intensity = 1 - (1-dot_product) / (1-cos(spotLight->cut_off_angle * PI / 180));
+                double spot_light_intensity = 1 - (1-dot_product)  / (1-cos(spotLight->cut_off_angle * PI / 180));
                 
-
                 spot_light_intensity = std::max(0.0, spot_light_intensity);
                 spot_light_intensity = std::min(1.0, spot_light_intensity);
 
-
+              
                 double lambert_value = std::max(0.0, Vector3D::dot(light_direction * (-1), normal));
                 Vector3D reflection =  light_direction - normal * 2 * Vector3D::dot(light_direction, normal);
                 reflection.normalize();
@@ -176,10 +184,62 @@ struct Object
             if(t > 0){
                 color = color + reflected_color * coEfficients[COEFF_REFLECTION];
             }
-        }   
+        } 
+
+
+        // handle_refraction(ray, color, level, intersection_point, normal, isInside);
 
         color.normalize();
         return t_min;
+    }
+
+
+
+    void handle_refraction(Ray ray, Color &color, int level, Vector3D intersection_point, Vector3D normal, bool isInside){
+        
+        Vector3D i = -ray.dir;
+        
+        Vector3D n = normal;
+        
+        // double refraction_index = this->refraction_index;
+        double refraction_index = 1.3;
+        if(isInside) {
+            refraction_index = 1.0 / refraction_index;
+            n = -n;
+        }
+        
+        double n_dot_i = Vector3D::dot(n,i);
+
+        double sqrt_term = 1 - refraction_index*refraction_index*(1 - n_dot_i*n_dot_i);
+
+        // full internal reflection
+        if(sqrt_term < 0) return;
+
+        Vector3D refracted_ray_dir = (n_dot_i * refraction_index - sqrt(sqrt_term)) * n - refraction_index * i;
+
+        Ray refracted_ray(intersection_point + refracted_ray_dir * EPSILON, refracted_ray_dir);
+
+        Color refracted_color;
+        
+        double t = INF;
+        Object* nearest = nullptr;
+        for(auto obj : objects){
+            if(obj == this) continue;
+            double t2 = obj->get_intersection_distance(refracted_ray);
+            if(t2 > 0 && t2 < t){
+                t = t2;
+                nearest = obj;
+            }
+        }
+
+        if(nearest != nullptr){
+            t = nearest->intersect(refracted_ray, refracted_color, level-1);
+            if(t > 0){
+                color = color + refracted_color * 0.5;
+            }
+        }
+
+        color.normalize();
     }
 
     virtual double get_intersection_distance(Ray ray) {
@@ -256,7 +316,7 @@ struct  Sphere : public Object
 {
     int sectorCount = 40, stackCount = 40;
     
-    
+
     Sphere(){}
     
     Sphere(Vector3D center, double radius, int sectorCount = 40, int stackCount = 40)
@@ -514,6 +574,5 @@ struct Quad : public Object{
     }
 
 };
-
 
 #endif

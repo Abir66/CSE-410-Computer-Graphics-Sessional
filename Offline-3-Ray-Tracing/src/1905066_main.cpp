@@ -26,7 +26,7 @@
 
 
 Camera camera(Vector3D(20, 20, 10), Vector3D(0, 0, 10),5,3);
-
+ 
 
 int recursion_level;
 int image_width, image_height;
@@ -82,6 +82,7 @@ void loadData()
             fin >> *quad;
             objects.push_back(quad);
         }
+
 	}
 
     fin>>point_light_count;
@@ -100,8 +101,13 @@ void loadData()
 
 
     Floor *floor = new Floor(500, 20);
-    floor->setCoEfficients(0.7, 0.4, 0.2, 0.2);
-    floor->setShine(5);
+    // floor->setCoEfficients(0.7, 0.8, 0.5, 0.2);
+    floor->setCoEfficients(0.4, 0.2, 0.2, 0.2);
+
+    // floor->color1 = BLACK;
+    // floor->color2 = Color(0.5, 0.5, 0.5);
+
+    floor->setShine(1);
     objects.push_back(floor);
 
 
@@ -138,7 +144,6 @@ void set_pixel(bitmap_image &image, int i, int j, Vector3D curPixel){
         double t = nearest->intersect(ray, color, recursion_level);
         image.set_pixel(i, j, 255*color.r, 255*color.g, 255*color.b);
     }
-
 }
 
 
@@ -203,6 +208,7 @@ void capture(){
     std::cout<<"Time taken to render: "<<time.count()/1000000.0<<" seconds"<<std::endl;
 
     std::string image_name = "output_" + std::to_string(image_count++) + ".bmp";
+    // std::string image_name = "output.bmp";
     std::cout<<"image saved as "<<image_name<<std::endl;
     image.save_image(image_name);
 }
